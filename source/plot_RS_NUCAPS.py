@@ -4,47 +4,32 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import pandas as pd
 import numpy as np
-
-from satpy import Scene, find_files_and_readers
-import numpy as np
-from datetime import datetime
-from metpy import calc as cc
-import pandas as pd
-import metpy.calc as mpcalc
-from metpy.units import units
-from metpy.interpolate import interpolate_to_grid
-import matplotlib.pyplot as plt
-
-import metpy.calc as mpcalc
-from metpy.cbook import get_test_data
-from metpy.plots import Hodograph, SkewT
-from metpy.units import units
-import datetime as dt
-
-from datetime import datetime
-import math 
-
-import os
-
+import math
+import os 
 from scipy import spatial
-import numpy as np
 import geopy.distance
 import scipy.ndimage as ndimage
 import xarray as xr
 import time
+
+from satpy import Scene, find_files_and_readers
+from datetime import datetime
+import datetime as dt
+
+from metpy import calc as cc
+import metpy.calc as mpcalc
+from metpy.units import units
+from metpy.interpolate import interpolate_to_grid
+from metpy.cbook import get_test_data
+from metpy.plots import Hodograph, SkewT
 
 def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
-dynfmt = "%Y%m%d%H%M%S"
-year="%Y"
-month="%m"
-day="%d"
-seconds="%S"
-
 ######################################## Load data and define numpy arrays ######################################## 
+# define time
 Year = "2020"
 Month = "04"
 Day = "27"
@@ -52,11 +37,16 @@ Hour = "00" # only 00 and 12
 Minute="00" # only 00 and 30
 Seconds='00'
 
+# datetime format
+dynfmt = "%Y%m%d%H%M%S"
+year="%Y"
+month="%m"
+day="%d"
+seconds="%S"
 
 ##### Surface Measurement #####
 #data_surf = pd.read_csv('/data/COALITION2/PicturesSatellite/results_NAL/surf_stat_20190427000000.txt')
 #lowest_pres_SMN = data_surf['90'][0]
-
 
 #Luftdruck_Stationshoehe = data_surf['90']
 #Luftdruck_Stationshoehe = Luftdruck_Stationshoehe.values * units.hPa
@@ -69,20 +59,18 @@ Seconds='00'
 ###### Radiosondes ######
 ### read Radiosonde file and save as dataframe ###
 xr_array = xr.open_dataset('/data/COALITION2/PicturesSatellite/results_NAL/Radiosondes/Payerne/RS_concat.nc')
-df = pd.DataFrame({'746': xr_array['746'], '744' : xr_array['744'], '745' : xr_array['745'], '747' : xr_array['747'], '742' : xr_array['742'], 'Time' : xr_array['termin']})
+data_RS = pd.DataFrame({'746': xr_array['746'], '744' : xr_array['744'], '745' : xr_array['745'], '747' : xr_array['747'], '742' : xr_array['742'], 'Time' : xr_array['termin']})
 
-### choose desired time ###
-data_comma = df[df.Time == int(Year+Month+Day+Hour+Minute+Seconds)]
-#df = pd.read_csv('/data/COALITION2/PicturesSatellite/results_NAL/Radiosondes/Milano/RS_16080_'+Year+Month+Day+Hour+'.txt')
-data_comma = data_comma[data_comma['744'] != 1000]
-data_comma = data_comma.reset_index(drop=True)
+# choose desired time and drop first line 
+data_RS = data_RS[data_RS.Time == int(Year+Month+Day+Hour+Minute+Seconds)]
+data_RS = data_RS[data_RS['744'] != 1000]
+data_RS = data_RS.reset_index(drop=True)
 
+# find pressure at 600 m altitude 
 nearest_value = find_nearest(data_comma['742'],600)
 lowest_pres_RS = float(data_comma['744'][data_comma['742']==nearest_value])
 
 ### define variables ###
-RH_RS = data_comma['746']
-RH_RS = RH_RS.to_frame()
 p_RS = data_comma['744']
 p_RS_original = data_comma['744']
 p_RS_original = p_RS_original.to_frame()
